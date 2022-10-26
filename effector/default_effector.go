@@ -16,6 +16,7 @@ package effector
 
 import (
 	"errors"
+	"log"
 
 	"github.com/casbin/casbin/v2/constant"
 )
@@ -84,6 +85,33 @@ func (e *DefaultEffector) MergeEffects(expr string, effects []Effect, matches []
 				break
 			}
 		}
+	case constant.AllowDenySubjEffect:
+		// short-circuit if matched deny rule
+		if matches[policyIndex] != 0 && effects[policyIndex] == Deny {
+			result = Deny
+			// set hit rule to the (first) matched deny rule
+			explainIndex = policyIndex
+			break
+		}
+
+		// short-circuit some effects in the middle
+		if policyIndex < policyLength-1 {
+			// choose not to short-circuit
+			return result, explainIndex, nil
+		}
+		// merge all effects at last
+		for i, eft := range effects {
+			if matches[i] == 0 {
+				continue
+			}
+
+			if eft == Allow {
+				result = Allow
+				// set hit rule to first matched allow rule
+				explainIndex = i
+				break
+			}
+		}
 	case constant.PriorityEffect, constant.SubjectPriorityEffect:
 		// reverse merge, short-circuit may be earlier
 		for i := len(effects) - 1; i >= 0; i-- {
@@ -102,6 +130,7 @@ func (e *DefaultEffector) MergeEffects(expr string, effects []Effect, matches []
 			}
 		}
 	default:
+		log.Printf("%s\n%v", expr, effects[policyIndex])
 		return Deny, -1, errors.New("unsupported effect")
 	}
 

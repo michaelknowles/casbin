@@ -27,4 +27,5 @@ const (
 	AllowAndDenyEffect    = "some(where (p_eft == allow)) && !some(where (p_eft == deny))"
 	PriorityEffect        = "priority(p_eft) || deny"
 	SubjectPriorityEffect = "subjectPriority(p_eft) || deny"
+	AllowDenySubjEffect   = "some(where (p.eft == allow)) && !some(where (p.eft == deny && p.sub == r.sub))"
 )
